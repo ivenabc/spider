@@ -1,0 +1,7 @@
+venv
+.vscode
+__pycache__
+*.html
+*.log
+*.jl
+*.json

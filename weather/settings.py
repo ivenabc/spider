@@ -83,7 +83,7 @@ DOWNLOADER_MIDDLEWARES = {
 ITEM_PIPELINES = {
     'weather.pipelines.WeatherPipeline': 300,
     # 'weather.pipelines.JsonWriterPipeline': 500,
-    'weather.pipelines.PostgresPipeline': 500,
+    'weather.pipelines.PostgresPipeline': None,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

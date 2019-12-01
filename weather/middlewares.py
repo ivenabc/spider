@@ -6,7 +6,64 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
+import logging
+import time
+from selenium import webdriver
+from utils.selenium_request import SeleniumRequest
+from scrapy.http import HtmlResponse
 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
+# driver = webdriver.Chrome()
+# driver.get('http://www.cma.gov.cn')
+
+# print(driver.title)
+
+# driver.quit()
+
+
+class SeleniumSpiderMiddleware(object):
+    def __init__(self):
+        desired_capabilities = DesiredCapabilities.CHROME.copy()  # 修改页面加载策略
+        desired_capabilities["pageLoadStrategy"] = "none"
+        self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities)
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        s = cls()
+        crawler.signals.connect(s.spider_closed, signals.spider_closed)
+        return s 
+
+    def process_request(self, request, spider):
+        if not isinstance(request, SeleniumRequest):
+            return None
+        self.driver.get(request.url)
+        
+        timeout = WebDriverWait(self.driver, 10)
+        timeout.until(EC.presence_of_element_located((By.NAME, 'province')))
+        js_script = '''
+            var selector = document.querySelector('select[name=province]');  
+            selector.options[2].selected = true;
+            var event = document.createEvent("HTMLEvents");
+            event.initEvent("change", true, true);
+            selector.dispatchEvent(event);
+        '''
+        self.driver.execute_script(js_script)
+        time.sleep(3)
+        body = str.encode(self.driver.page_source)
+        return HtmlResponse(
+            self.driver.current_url,
+            body=body,
+            encoding='utf-8',
+            request=request,
+        )
+
+    def spider_closed(self):
+        self.driver.quit()
 
 class WeatherSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
@@ -64,6 +121,8 @@ class WeatherDownloaderMiddleware(object):
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.
+        # logging.warning("12123")
+        # logging.warning(cls)
         s = cls()
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s

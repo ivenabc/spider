@@ -34,7 +34,7 @@ LOG_STDOUT = True
 #USER_AGENT = 'weather (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -68,7 +68,7 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'scrapy_selenium.SeleniumMiddleware': 800,
+    'weather.middlewares.SeleniumSpiderMiddleware': 300,
     'weather.middlewares.WeatherDownloaderMiddleware': None,
 }
 

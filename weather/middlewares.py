@@ -28,9 +28,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 class SeleniumSpiderMiddleware(object):
     def __init__(self):
-        desired_capabilities = DesiredCapabilities.CHROME.copy()  # 修改页面加载策略
-        desired_capabilities["pageLoadStrategy"] = "none"
-        self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities)
+        self.driver = None
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -40,19 +38,19 @@ class SeleniumSpiderMiddleware(object):
 
     def process_request(self, request, spider):
         if not isinstance(request, SeleniumRequest):
+            logging.warning("xxxxxxxxxxxxx -=======")
+            logging.warning(type(request))
             return None
+        logging.warning("started -=======")
+        desired_capabilities = DesiredCapabilities.CHROME.copy()  # 修改页面加载策略
+        desired_capabilities["pageLoadStrategy"] = "none"
+        self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities)
         self.driver.get(request.url)
         
         timeout = WebDriverWait(self.driver, 10)
         timeout.until(EC.presence_of_element_located((By.NAME, 'province')))
-        js_script = '''
-            var selector = document.querySelector('select[name=province]');  
-            selector.options[2].selected = true;
-            var event = document.createEvent("HTMLEvents");
-            event.initEvent("change", true, true);
-            selector.dispatchEvent(event);
-        '''
-        self.driver.execute_script(js_script)
+        
+        self.driver.execute_script(request.script)
         time.sleep(3)
         body = str.encode(self.driver.page_source)
         return HtmlResponse(
@@ -63,7 +61,8 @@ class SeleniumSpiderMiddleware(object):
         )
 
     def spider_closed(self):
-        self.driver.quit()
+        if self.driver:
+            self.driver.quit()
 
 class WeatherSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,

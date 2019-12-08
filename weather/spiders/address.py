@@ -6,7 +6,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import logging
 from utils.user_agent import get_random_useragent
-
+from weather.items import MainLoader,City
+# from 
 
 class AddressSpider(scrapy.Spider):
     name = 'address'
@@ -33,32 +34,15 @@ class AddressSpider(scrapy.Spider):
         #     )
         yield scrapy.Request(url=self.url, callback=self.parse)
         # yield SeleniumRequest(
-        # # script=js_script,
+        #     cript=js_script,
         #     url=self.url,
         #     callback=self.parse_city,
         # )
 
     def parse(self, response):
-        # js_script = f'''
-        #         var selector = document.querySelector('select[name=province]');
-        #         selector.options[{index+1}].selected = true;
-        #         var event = document.createEvent("HTMLEvents");
-        #         event.initEvent("change", true, true);
-        #         selector.dispatchEvent(event);
-        #     '''
-        # yield SeleniumRequest(
-        #     # script=js_script,
-        #     url='http://www.cma.gov.cn/',
-        #     callback=self.parse_city,
-        # )
-        # return 
-        # logging.warning("aaabbafdsafasdfasdf")
-        # logging.warning(response.css(
-        #     'select[name=province]>option::attr(value)').getall())
         list = response.css('select[name=province]>option::attr(value)').getall()
-        
-        for index, _ in enumerate(list[:1]):
-            
+        for index, province in enumerate(list):
+            logging.warning("saatarted -=======")
             js_script = f'''
                 var selector = document.querySelector('select[name=province]');
                 selector.options[{index+1}].selected = true;
@@ -66,15 +50,26 @@ class AddressSpider(scrapy.Spider):
                 event.initEvent("change", true, true);
                 selector.dispatchEvent(event);
             '''
-            yield SeleniumRequest(
+            req = SeleniumRequest(
                 script=js_script,
                 url=self.url,
                 dont_filter=True,
                 callback=self.parse_city,
             )
-            logging.warning("aaabbafdsafasdfasdf====")
+            req.meta['province'] = province
+            # logging.warning("aaabbafdsafasdfasdf====")
+            yield req
             # if index == 0:
             #     break
 
     def parse_city(self, response):
-        logging.warning(response.css('select[name=chinacity]>option').getall())
+        
+
+        options = response.css('select[name=chinacity]>option')
+        for option in options:
+            loader = MainLoader(item=City(), selector=option, response=response)
+            loader.add_css('cityid', 'option::attr(value)')
+            loader.add_css('cityname', 'option::text')
+            loader.add_value('province', response.meta['province'])
+            yield loader.load_item()
+

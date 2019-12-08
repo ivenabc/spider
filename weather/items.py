@@ -13,11 +13,19 @@ from scrapy.loader.processors import TakeFirst, Identity
 
 
 
+class City(Item):
+    province = Field()
+    cityid = Field()
+    cityname = Field()
+
+
 class WeatherItem(Item):
     title = Field()
     weather = Field()
     sky = Field()
     temprature = Field()
+    max_temprature = Field()
+    min_temprature = Field()
     temprature_unit = Field()
     wind_title = Field()
     wind_summary = Field()
@@ -32,7 +40,7 @@ class TodayItem(Item):
 
 
 class MainLoader(ItemLoader):
-    default_item_class = WeatherItem
+    # default_item_class = WeatherItem
     default_output_processor = TakeFirst()
 
 

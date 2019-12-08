@@ -17,6 +17,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.chrome.options import Options
+from random_user_agent.user_agent import UserAgent
+from random_user_agent.params import HardwareType, OperatingSystem
 
 # driver = webdriver.Chrome()
 # driver.get('http://www.cma.gov.cn')
@@ -25,6 +28,13 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 # driver.quit()
 
+
+def randomUserAgent():
+    operating_systems = [OperatingSystem.CHROMEOS.value]
+    hardware_types = [HardwareType.COMPUTER.value]
+    user_agent_rotator = UserAgent(operating_systems=operating_systems,hardware_types=hardware_types)
+    ua = user_agent_rotator.get_random_user_agent()
+    return ua
 
 class SeleniumSpiderMiddleware(object):
     def __init__(self):
@@ -38,31 +48,39 @@ class SeleniumSpiderMiddleware(object):
 
     def process_request(self, request, spider):
         if not isinstance(request, SeleniumRequest):
-            logging.warning("xxxxxxxxxxxxx -=======")
-            logging.warning(type(request))
             return None
-        logging.warning("started -=======")
+        # time.sleep(10)
+        
+        ua = randomUserAgent()
+        opts = Options()
+        opts.add_argument(ua)
+        opts.add_argument('--headless')
+        opts.add_argument('--disable-gpu')
         desired_capabilities = DesiredCapabilities.CHROME.copy()  # 修改页面加载策略
         desired_capabilities["pageLoadStrategy"] = "none"
-        self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities)
-        self.driver.get(request.url)
-        
-        timeout = WebDriverWait(self.driver, 10)
+        driver = webdriver.Chrome(desired_capabilities=desired_capabilities, options=opts)
+        driver.get(request.url)
+        timeout = WebDriverWait(driver, 10)
         timeout.until(EC.presence_of_element_located((By.NAME, 'province')))
         
-        self.driver.execute_script(request.script)
+        driver.execute_script(request.script)
         time.sleep(3)
-        body = str.encode(self.driver.page_source)
+        body = str.encode(driver.page_source)
+        currenturl = driver.current_url
+
+        driver.delete_all_cookies()
+        driver.close()
         return HtmlResponse(
-            self.driver.current_url,
+            currenturl,
             body=body,
             encoding='utf-8',
             request=request,
         )
 
     def spider_closed(self):
-        if self.driver:
-            self.driver.quit()
+        pass
+        # if self.driver:
+        #     self.driver.quit()
 
 class WeatherSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,

@@ -37,7 +37,7 @@ LOG_STDOUT = True
 ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS = 1
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
@@ -83,7 +83,7 @@ DOWNLOADER_MIDDLEWARES = {
 ITEM_PIPELINES = {
     'weather.pipelines.WeatherPipeline': 300,
     # 'weather.pipelines.JsonWriterPipeline': 500,
-    'weather.pipelines.PostgresPipeline': None,
+    'weather.pipelines.PostgresPipeline': 500,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

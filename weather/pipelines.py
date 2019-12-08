@@ -10,6 +10,7 @@ import json
 from scrapy.utils.serialize import ScrapyJSONEncoder
 import os
 import psycopg2
+from .items import City
 # import sys
 # sys.setdefaultencoding('utf-8')
 
@@ -50,11 +51,24 @@ class PostgresPipeline(object):
         self.client.close()
 
     def process_item(self, item, spider):
-        encoder = ScrapyJSONEncoder(ensure_ascii=False)
-        line = encoder.encode(item)
+        if isinstance(item, City):
+            logging.warning(item['province'])
+            self.process_cities(item)
+        else: 
+            encoder = ScrapyJSONEncoder(ensure_ascii=False)
+            line = encoder.encode(item)
+            cur = self.client.cursor()
+            cur.execute('INSERT INTO weather VALUES(now(),CURRENT_DATE,%s) ON CONFLICT(today_date) DO UPDATE SET updatedat=now(),information=%s', 
+                (line, line))
+            self.client.commit()
+            cur.close()
+        return item 
+    
+    def process_cities(self, item):
+        if item['cityid'] == '0':
+            return 
         cur = self.client.cursor()
-        cur.execute('INSERT INTO weather VALUES(now(),CURRENT_DATE,%s) ON CONFLICT(today_date) DO UPDATE SET updatedat=now(),information=%s', 
-            (line, line))
+        cur.execute('INSERT INTO weather_cities(province,cityid,cityname) VALUES(%s,%s,%s) ON CONFLICT(cityid) DO NOTHING;',
+         (item['province'], item['cityid'], item['cityname']))
         self.client.commit()
         cur.close()
-        return item 

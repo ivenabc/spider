@@ -7,7 +7,7 @@
 
 from scrapy import Item, Field
 from scrapy.loader import ItemLoader
-from scrapy.loader.processors import TakeFirst, Identity
+from scrapy.loader.processors import TakeFirst, Identity,Join
 
 
 
@@ -20,6 +20,7 @@ class City(Item):
 
 
 class WeatherItem(Item):
+    index = Field()
     title = Field()
     weather = Field()
     sky = Field()
@@ -27,8 +28,8 @@ class WeatherItem(Item):
     max_temprature = Field()
     min_temprature = Field()
     temprature_unit = Field()
-    wind_title = Field()
     wind_summary = Field()
+    wind = Field(output_processor=Identity())
 
 
 class TodayItem(Item):

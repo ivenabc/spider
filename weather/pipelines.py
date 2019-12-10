@@ -10,7 +10,7 @@ import json
 from scrapy.utils.serialize import ScrapyJSONEncoder
 import os
 import psycopg2
-from .items import City
+from .items import City,WeatherItem
 # import sys
 # sys.setdefaultencoding('utf-8')
 
@@ -54,6 +54,8 @@ class PostgresPipeline(object):
         if isinstance(item, City):
             logging.warning(item['province'])
             self.process_cities(item)
+        elif isinstance(item, WeatherItem):
+            self.process_weather(item)
         else: 
             encoder = ScrapyJSONEncoder(ensure_ascii=False)
             line = encoder.encode(item)
@@ -70,5 +72,15 @@ class PostgresPipeline(object):
         cur = self.client.cursor()
         cur.execute('INSERT INTO weather_cities(province,cityid,cityname) VALUES(%s,%s,%s) ON CONFLICT(cityid) DO NOTHING;',
          (item['province'], item['cityid'], item['cityname']))
+        self.client.commit()
+        cur.close()
+
+    def process_weather(self, weather):
+        cur = self.client.cursor()
+        cur.execute('''
+                INSERT INTO weather(title,max_temprature,min_temprature,wind_summary, wind,record_date) 
+                VALUES(%s,%s,%s,%s,%s, CURRENT_DATE + interval  '%s days') ON CONFLICT(record_date) DO NOTHING;
+                ''',(weather['title'], weather.get('max_temprature', ''),weather['min_temprature'],
+                    weather['wind_summary'], weather['wind'], weather['index']))
         self.client.commit()
         cur.close()

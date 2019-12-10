@@ -63,7 +63,6 @@ class AddressSpider(scrapy.Spider):
             #     break
 
     def parse_city(self, response):
-        
 
         options = response.css('select[name=chinacity]>option')
         for option in options:
